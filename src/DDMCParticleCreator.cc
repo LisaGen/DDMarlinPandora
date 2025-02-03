@@ -107,7 +107,9 @@ pandora::StatusCode DDMCParticleCreator::CreateMCParticles(const EVENT::LCEvent 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode DDMCParticleCreator::CreateTrackToMCParticleRelationships(const EVENT::LCEvent *const pLCEvent, const TrackVector &trackVector) const
-{
+{   
+    std::cout<<"~~~~~~~~~~~~~~~m_settings.m_lcTrackRelationCollections.size() ="<< m_settings.m_lcTrackRelationCollections.size()<<"~~~~~~~~~~~~~~~~~~~"<<std::endl;
+    std::cout<<"==================DDMCParticleCreator::CreateTrackToMCParticleRelationships==================="<<std::endl;
     for (StringVector::const_iterator iter = m_settings.m_lcTrackRelationCollections.begin(), iterEnd = m_settings.m_lcTrackRelationCollections.end();
          iter != iterEnd; ++iter)
     {
@@ -115,7 +117,7 @@ pandora::StatusCode DDMCParticleCreator::CreateTrackToMCParticleRelationships(co
         {
             const EVENT::LCCollection *pMCRelationCollection = pLCEvent->getCollection(*iter);
             UTIL::LCRelationNavigator navigate(pMCRelationCollection);
-
+            std::cout<<"~~~~~~~~~~~~~~~trackVector.size() ="<< trackVector.size()<<"~~~~~~~~~~~~~~~~~~~"<<std::endl;
             for (TrackVector::const_iterator trackIter = trackVector.begin(), trackIterEnd = trackVector.end();
                 trackIter != trackIterEnd; ++trackIter)
             {
@@ -131,25 +133,28 @@ pandora::StatusCode DDMCParticleCreator::CreateTrackToMCParticleRelationships(co
                     // Use momentum magnitude to identify best mc particle
                     MCParticle *pBestMCParticle = NULL;
                     float bestDeltaMomentum(std::numeric_limits<float>::max());
-
+                    std::cout<<"~~~~~~~~~~~~~~~objectVec.size() ="<< objectVec.size()<<"~~~~~~~~~~~~~~~~~~~"<<std::endl;
                     for (EVENT::LCObjectVec::const_iterator itRel = objectVec.begin(), itRelEnd = objectVec.end(); itRel != itRelEnd; ++itRel)
                     {
                         EVENT::MCParticle *pMCParticle = NULL;
                         pMCParticle = dynamic_cast<MCParticle *>(*itRel);
-
+                        std::cout<<"~~~~~~~~~~~~~~~BEFORE: in(NULL == pMCParticle continue)~~~~~~~~~~~~~~~~~~~"<<std::endl;
                         if (NULL == pMCParticle)
                             continue;
-
+                            std::cout<<"~~~~~~~~~~~~~~~AFTER: in(NULL == pMCParticle continue)~~~~~~~~~~~~~~~~~~~"<<std::endl;
                         const float trueMomentum(pandora::CartesianVector(pMCParticle->getMomentum()[0], pMCParticle->getMomentum()[1],
                             pMCParticle->getMomentum()[2]).GetMagnitude());
+                        std::cout<< "------------pMCParticle->GetMomentum()[component]: px= " << pMCParticle->getMomentum()[0] << " py= " << pMCParticle->getMomentum()[1] << " pz= " << pMCParticle->getMomentum()[2]<<std::endl;
 
                         const float deltaMomentum(std::fabs(recoMomentum - trueMomentum));
+                        std::cout<< "------------recoMomentum: " << recoMomentum << " trueMomentum: " << trueMomentum << " pz= " << pMCParticle->getMomentum()[2]<<std::endl;
 
                         if (deltaMomentum < bestDeltaMomentum)
                         {
                             pBestMCParticle = pMCParticle;
                             bestDeltaMomentum = deltaMomentum;
                         }
+                        std::cout<< "------------bestDeltaMomentum: " << bestDeltaMomentum << " (recoMomentum-trueMomentum): "<<std::endl;
                     }
 
                     if (NULL == pBestMCParticle)
@@ -180,7 +185,7 @@ pandora::StatusCode DDMCParticleCreator::CreateTrackToMCParticleRelationships(co
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode DDMCParticleCreator::CreateCaloHitToMCParticleRelationships(const EVENT::LCEvent *const pLCEvent, const CalorimeterHitVector &calorimeterHitVector) const
-{
+{   std::cout<<"==================DDMCParticleCreator::CreateCaloHitToMCParticleRelationships==================="<<std::endl;
     typedef std::map<MCParticle *, float> MCParticleToEnergyWeightMap;
     MCParticleToEnergyWeightMap mcParticleToEnergyWeightMap;
 

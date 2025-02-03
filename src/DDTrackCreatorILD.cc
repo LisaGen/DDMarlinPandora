@@ -186,7 +186,7 @@ DDTrackCreatorILD::~DDTrackCreatorILD()
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode DDTrackCreatorILD::CreateTracks(EVENT::LCEvent *pLCEvent)
-{
+{ std::cout<<"======================DDTrackCreatorILD::CreateTracks========================="<<std::endl;
   for (StringVector::const_iterator iter = m_settings.m_trackCollections.begin(), iterEnd = m_settings.m_trackCollections.end();
        iter != iterEnd; ++iter)
     {
@@ -299,7 +299,7 @@ bool DDTrackCreatorILD::PassesQualityCuts(const EVENT::Track *const pTrack, cons
   // Check momentum uncertainty is reasonable to use track
   const pandora::CartesianVector &momentumAtDca(trackParameters.m_momentumAtDca.Get());
   const float sigmaPOverP(std::sqrt(pTrack->getCovMatrix()[5]) / std::fabs(pTrack->getOmega()));
-
+  std::cout<<"*************** ILD pTrack->getOmega(): " << pTrack->getOmega() << std::endl;
   if (sigmaPOverP > m_settings.m_maxTrackSigmaPOverP)
     {
       streamlog_out(WARNING) << " Dropping track : " << momentumAtDca.GetMagnitude() << "+-" << sigmaPOverP * (momentumAtDca.GetMagnitude())
@@ -319,6 +319,7 @@ bool DDTrackCreatorILD::PassesQualityCuts(const EVENT::Track *const pTrack, cons
       const float pZ(fabs(momentumAtDca.GetZ()));
       const float pT(std::sqrt(pX * pX + pY * pY));
       const float rInnermostHit(pTrack->getRadiusOfInnermostHit());
+      std::cout<<"************************ ILD momentumAtDca.GetMagnitude() pT: " << pT<< std::endl;
 
       if ((std::numeric_limits<float>::epsilon() > std::fabs(pT)) || (std::numeric_limits<float>::epsilon() > std::fabs(pZ)) || (rInnermostHit == m_tpcOuterR))
         {

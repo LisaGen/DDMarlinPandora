@@ -110,6 +110,7 @@ public:
         float                         m_hCalBarrelOuterR;                 ///< HCal barrel outer r coordinate
         float                         m_hCalBarrelOuterPhi0;              ///< HCal barrel outer phi0 coordinate
         unsigned int                  m_hCalBarrelOuterSymmetry;          ///< HCal barrel outer symmetry order
+      //        int                           m_digitalCalo;
 
     public:
       FloatVector m_eCalBarrelNormalVector;

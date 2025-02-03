@@ -209,7 +209,8 @@ class DDCaloDigi_BIB : public Processor {
   float _deadCellFractionEcal = 0.0;  // fraction of random dead channels
   bool  _deadCellEcal_keep = false;   // keep same cells dead between events?
 
-  bool  _useCrilinBarrel = false;   // use Crilin Barrel
+  bool  _useCLIC = false;   // use CLIC calorimeter
+  bool  _useCrilin = false;   // use Crilin
 
   float _strip_abs_length = 1000000;  // absorption length along strip for non-uniformity modeling
   float _ecal_pixSpread = 0.05;       // relative spread of MPPC pixel signal

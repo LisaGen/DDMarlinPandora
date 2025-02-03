@@ -17,7 +17,7 @@
 
 #include "DDExternalClusteringAlgorithm.h"
 #include "DDPandoraPFANewProcessor.h"
-
+#include "DDPfoCreator.h"
 #include "DD4hep/Detector.h"
 #include "DD4hep/DD4hepUnits.h"
 #include "DD4hep/DetType.h"
@@ -146,6 +146,13 @@ DDPandoraPFANewProcessor::DDPandoraPFANewProcessor() :
 {
     _description = "Pandora reconstructs clusters and particle flow objects";
     this->ProcessSteeringFile();
+    /*
+    registerProcessorParameter("isDigitalCalo" ,
+			       "flag to be actived for digital calorimeter readout" ,
+			       _digitalCalo ,
+			       0);
+
+    */
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -854,6 +861,19 @@ void DDPandoraPFANewProcessor::ProcessSteeringFile()
                                "The minimum correction to on ecal hit in Pandora energy correction",
                                m_settings.m_minCleanCorrectedHitEnergy,
                                softwareCompensationParameters.m_minCleanCorrectedHitEnergy);
+
+    /*
+    registerProcessorParameter("isDigitalCalo",
+                               "flag to be actived for digital calorimeter readout",
+                               _digitalCalo ,
+                               0);
+    */
+
+
+    registerProcessorParameter("isDigitalCalo",
+			       "flag to be actived for digital calorimeter readout",
+			       m_pfoCreatorSettings._digitalCalo,
+			       99);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -912,7 +932,7 @@ void DDPandoraPFANewProcessor::FinaliseSteeringParameters()
     m_caloHitCreatorSettings.m_hCalBarrelOuterSymmetry      =   hCalBarrelExtension->outer_symmetry;
     m_caloHitCreatorSettings.m_hCalEndCapInnerSymmetryOrder =   hCalEndcapExtension->inner_symmetry;;
     m_caloHitCreatorSettings.m_hCalEndCapInnerPhiCoordinate =   hCalEndcapExtension->inner_phi0/dd4hep::rad;;
-    
+    //m_caloHitCreatorSettings.m_digitalCalo    = 1;
     // Get the magnetic field
     dd4hep::Detector& mainDetector = dd4hep::Detector::getInstance();
     const double position[3]={0,0,0}; // position to calculate magnetic field at (the origin in this case)

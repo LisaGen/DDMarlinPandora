@@ -66,7 +66,8 @@ DDTrackCreatorBase::~DDTrackCreatorBase()
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode DDTrackCreatorBase::CreateTrackAssociations(const EVENT::LCEvent *const pLCEvent)
-{
+{   
+    std::cout<<"==================DDTrackCreatorBase::CreateTrackAssociations==================="<<std::endl;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ExtractKinks(pLCEvent));
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ExtractProngsAndSplits(pLCEvent));
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ExtractV0s(pLCEvent));
@@ -77,7 +78,8 @@ pandora::StatusCode DDTrackCreatorBase::CreateTrackAssociations(const EVENT::LCE
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode DDTrackCreatorBase::ExtractKinks(const EVENT::LCEvent *const pLCEvent)
-{
+{   
+    std::cout<<"==================DDTrackCreatorBase::ExtractKinks==================="<<std::endl;
     for (StringVector::const_iterator iter = m_settings.m_kinkVertexCollections.begin(), iterEnd = m_settings.m_kinkVertexCollections.end();
         iter != iterEnd; ++iter)
     {
@@ -185,7 +187,7 @@ pandora::StatusCode DDTrackCreatorBase::ExtractKinks(const EVENT::LCEvent *const
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode DDTrackCreatorBase::ExtractProngsAndSplits(const EVENT::LCEvent *const pLCEvent)
-{
+{   std::cout<<"==================DDTrackCreatorBase::ExtractProngsAndSplits==================="<<std::endl;
     for (StringVector::const_iterator iter = m_settings.m_prongSplitVertexCollections.begin(), iterEnd = m_settings.m_prongSplitVertexCollections.end();
         iter != iterEnd; ++iter)
     {
@@ -257,7 +259,8 @@ pandora::StatusCode DDTrackCreatorBase::ExtractProngsAndSplits(const EVENT::LCEv
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode DDTrackCreatorBase::ExtractV0s(const EVENT::LCEvent *const pLCEvent)
-{
+{   
+    std::cout<<"==================DDTrackCreatorBase::ExtractV0s==================="<<std::endl;
     for (StringVector::const_iterator iter = m_settings.m_v0VertexCollections.begin(), iterEnd = m_settings.m_v0VertexCollections.end();
         iter != iterEnd; ++iter)
     {
@@ -341,7 +344,7 @@ pandora::StatusCode DDTrackCreatorBase::ExtractV0s(const EVENT::LCEvent *const p
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 bool DDTrackCreatorBase::IsConflictingRelationship(const EVENT::TrackVec &trackVec) const
-{
+{   std::cout<<"==================DDTrackCreatorBase::IsConflictingRelationship==================="<<std::endl;
     for (unsigned int iTrack = 0, nTracks = trackVec.size(); iTrack < nTracks; ++iTrack)
     {
         EVENT::Track *pTrack = trackVec[iTrack];
@@ -545,11 +548,12 @@ float DDTrackCreatorBase::CalculateTrackTimeAtCalorimeter(const EVENT::Track *co
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 void DDTrackCreatorBase::CopyTrackState(const TrackState *const pTrackState, pandora::InputTrackState &inputTrackState) const
-{
+{   std::cout<<"==================DDTrackCreatorBase::CopyTrackState==================="<<std::endl;
     if (!pTrackState)
         throw pandora::StatusCodeException(pandora::STATUS_CODE_NOT_INITIALIZED);
 
     const double pt(m_settings.m_bField * 2.99792e-4 / std::fabs(pTrackState->getOmega()));
+    std::cout<<"----------------DDTrackCreatorBase::CopyTrackState----------------pT: "<<pt<<std::endl;
 
     const double px(pt * std::cos(pTrackState->getPhi()));
     const double py(pt * std::sin(pTrackState->getPhi()));

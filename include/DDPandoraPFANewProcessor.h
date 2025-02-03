@@ -34,6 +34,7 @@ public:
     typedef std::vector<float> FloatVector;
     typedef std::vector<std::string> StringVector;
 
+  int _digitalCalo;
     /**
      *  @brief  Settings class
      */
@@ -51,7 +52,7 @@ public:
         float           m_muonBarrelBField = 0.0;           ///< The bfield in the muon barrel, units Tesla
         float           m_muonEndCapBField = 0.0;           ///< The bfield in the muon endcap, units Tesla
         bool            m_useDD4hepField = false;           ///< Whether to use the DD4hep field map instead of the values above
-
+      //        int             _digitalCalo = 0;
         FloatVector     m_inputEnergyCorrectionPoints{};    ///< The input energy points for non-linearity energy correction
         FloatVector     m_outputEnergyCorrectionPoints{};   ///< The output energy points for non-linearity energy correction
         

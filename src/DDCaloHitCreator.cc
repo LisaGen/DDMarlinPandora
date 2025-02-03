@@ -70,6 +70,7 @@ DDCaloHitCreator::~DDCaloHitCreator()
 
 pandora::StatusCode DDCaloHitCreator::CreateCaloHits(const EVENT::LCEvent *const pLCEvent)
 {
+    std::cout<<"==================DDCaloHitCreator::CreateCaloHits==================="<<std::endl;
 
   //fg: there cannot be any reasonable default for this string - so we set it to sth. that will cause an exception in case 
   //    the cellID encoding string is not in the collection: 
@@ -231,6 +232,7 @@ pandora::StatusCode DDCaloHitCreator::CreateECalCaloHits(const EVENT::LCEvent *c
 
 pandora::StatusCode DDCaloHitCreator::CreateHCalCaloHits(const EVENT::LCEvent *const pLCEvent)
 {
+  std::cout<<"*************CaloHit creator*******************************"<<std::endl;
     for (StringVector::const_iterator iter = m_settings.m_hCalCaloHitCollections.begin(), iterEnd = m_settings.m_hCalCaloHitCollections.end();
         iter != iterEnd; ++iter)
     {
@@ -251,7 +253,7 @@ pandora::StatusCode DDCaloHitCreator::CreateHCalCaloHits(const EVENT::LCEvent *c
             
             
             const std::string layerCoding("layer");
-
+	    std::cout<<"n calo hits="<< nElements<<std::endl;
             for (int i = 0; i < nElements; ++i)
             {
                 try
@@ -260,7 +262,7 @@ pandora::StatusCode DDCaloHitCreator::CreateHCalCaloHits(const EVENT::LCEvent *c
 
                     if (NULL == pCaloHit)
                         throw EVENT::Exception("Collection type mismatch");
-
+		    //std::cout<<"Hit num="<<i<<" original pCalo Hit energy="<<pCaloHit->getEnergy()<<std::endl;
                     PandoraApi::CaloHit::Parameters caloHitParameters;
                     caloHitParameters.m_hitType = pandora::HCAL;
                     caloHitParameters.m_isDigital = false;
@@ -279,15 +281,23 @@ pandora::StatusCode DDCaloHitCreator::CreateHCalCaloHits(const EVENT::LCEvent *c
                     {
                         this->GetEndCapCaloHitProperties(pCaloHit, endcapLayers, caloHitParameters, absorberCorrection);
                     }
+		    //std::cout<<"pCaloHit get energy : " << pCaloHit->getEnergy() << std::endl;
 
-                    caloHitParameters.m_mipEquivalentEnergy = pCaloHit->getEnergy() * m_settings.m_hCalToMip * absorberCorrection;
+		    caloHitParameters.m_mipEquivalentEnergy = pCaloHit->getEnergy() * m_settings.m_hCalToMip * absorberCorrection;
+		    //std::cout<<"m_mip Equivalent  energy : "	<< caloHitParameters.m_mipEquivalentEnergy.Get()<< std::endl;
 
                     if (caloHitParameters.m_mipEquivalentEnergy.Get() < m_settings.m_hCalMipThreshold)
                         continue;
+		    //std::cout<<"pCaloHit get energy : " << pCaloHit->getEnergy() << std::endl;
+		    //std::cout<<"mip equivalent threshold : " << m_settings.m_hCalMipThreshold << std::endl;
+		    
 
                     caloHitParameters.m_hadronicEnergy = std::min(m_settings.m_hCalToHadGeV * pCaloHit->getEnergy(), m_settings.m_maxHCalHitHadronicEnergy);
                     caloHitParameters.m_electromagneticEnergy = m_settings.m_hCalToEMGeV * pCaloHit->getEnergy();
 
+		    //std::cout<<i<<" CaloHit: m_hadronicEnergy="<<std::min(m_settings.m_hCalToHadGeV * pCaloHit->getEnergy(), m_settings.m_maxHCalHitHadronicEnergy) <<std::endl;
+		    //		    std::cout<<" CaloHit: m_eleEnergy="<<caloHitParameters.m_electromagneticEnergy <<std::endl;
+		    
                     PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::CaloHit::Create(m_pandora, caloHitParameters));
                     m_calorimeterHitVector.push_back(pCaloHit);
                 }
@@ -866,5 +876,6 @@ DDCaloHitCreator::Settings::Settings()
     m_eCalBarrelNormalVector({0.0, 0.0, 1.0}),
     m_hCalBarrelNormalVector({0.0, 0.0, 1.0}),
     m_muonBarrelNormalVector({0.0, 0.0, 1.0})
+    //    m_digitalCalo(1)
 {
 }

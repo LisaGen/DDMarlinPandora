@@ -51,6 +51,59 @@ dd4hep::rec::LayeredCalorimeterData * getExtension(unsigned int includeFlag, uns
 DDCaloDigi_BIB aDDCaloDigi_BIB ;
 	
 
+double GetThresholdCrilin(double x,double y,double z,int nsigma){
+
+    float r = sqrt(x*x+y*y);
+
+    double phi_rel= acos(x/r);
+    if (y<0) phi_rel = -phi_rel+2*3.14159;
+    int n = phi_rel/(2*3.14159/24);
+    phi_rel = phi_rel - n*2*3.14159/24;
+    double x_rel = r*cos(phi_rel);
+
+    double emean[5][3]={161.1, 125.4, 68.55,
+                        63.75, 50.38, 27.59,
+                        26.02, 20.85, 11.65,
+                        14.29, 12.01, 7.568,
+                        10.34, 9.356, 6.108};
+
+    double estd[5][3]={62.45, 53.89, 34.94,
+                       51.8,  43.57, 28,
+                       21.77, 18.92, 13.58,
+                       15.27, 13.78, 10.93,
+                       13.05, 12.22, 9.632};
+
+    /*double emean[5][3]={0, 0, 0,
+                        0, 0, 0,
+                        0, 0, 0,
+                        0, 0, 0,
+                        0, 0, 0};
+
+    double estd[5][3]={0, 0, 0,
+                       0,  0, 0,
+                       0, 0, 0,
+                       0, 0, 0,
+                       0, 0, 0};*/
+
+    int nx;
+
+    if (x_rel<1550.) nx=0;
+    if (x_rel>1550. && x_rel< 1580.) nx=1;
+    if (x_rel>1580. && x_rel< 1630.) nx=2;
+    if (x_rel>1630. && x_rel< 1670.) nx=3;
+    if (x_rel>1670.) nx=4;
+
+    int nz = abs(z/(2210./3.));
+
+    if (nz>2) nz=2;
+
+    double eth=(emean[nx][nz]+nsigma*estd[nx][nz])*0.001;
+
+    return eth;
+
+  }
+
+
 // helper struct for string comparision
 struct XToLower{
   int operator() ( int ch ) {
@@ -59,100 +112,72 @@ struct XToLower{
 };
 
 //Thresholds optimized for BIB at 1.5 TeV
-bool applyDifferentialThresholdEcalBIB(CalorimeterHitImpl * calhit, bool useCLIC, bool useCrilin) {
+bool applyDifferentialThresholdEcalBIB(CalorimeterHitImpl * calhit, bool useCrilinBarrel) {
   bool pass = false;
 
-  if (useCLIC==false && useCrilin==false) pass = true;
-
-  if (useCLIC==true){
-	  
-    float x = calhit->getPosition()[0];
-    float y = calhit->getPosition()[1];
-    float z = calhit->getPosition()[2];
-    float d = sqrt(x*x+y*y+z*z);
-    float R = sqrt(x*x+y*y);
-    float theta = acos(z/d);
-
-    float theta_bins[3+1] = {1.57-1.02,1.57-0.27,1.57+0.27,1.57+1.02};
-    float R_bins[5+1] = {1500,1570,1600,1650,1710,1770};
-
-    float th_barrel[5][3] = {18.2731,  17.1456,  18.4469,
-                    24.7357,  21.9555,  24.6477,
-                    33.8206,  30.3771,  33.8971,
-                    43.646,   42.9506,  43.3244,
-                    45.6661,  47.0891,  46.0237};
-
-    float std_barrel[5][3] = {32.9455,  31.5414,  34.2989,
-                        55.6836,  48.5732,  55.6375,
-                        77.1442,  71.8559,  76.0541,
-                        93.3592,  94.8317,  91.6914,
-                        96.7721,  96.9367,  94.6892};
-
-    for (int i_theta=0; i_theta<3; i_theta++){
-      for (int i_R=0; i_R<5; i_R++){
-        if (theta>theta_bins[i_theta] && theta<theta_bins[i_theta+1] && R>R_bins[i_R] && R<R_bins[i_R+1]) {
-          if (calhit->getEnergy()>(th_barrel[i_R][i_theta]+2*std_barrel[i_R][i_theta])*0.001) {pass = true;
-                                                                  calhit->setEnergy(calhit->getEnergy()-th_barrel[i_theta][i_R]*0.001);
-                                                                 }
-        }
-      }
-    } 
-
-
-    }
-
-  if (useCrilin==true){
+  if (useCrilinBarrel==true){
 
     float x = calhit->getPosition()[0];
     float y = calhit->getPosition()[1];
     float z = calhit->getPosition()[2];
 
-     //Rotation of the dodecaedra
+    float t = calhit->getTime();
 
-    float phi = acos(x/sqrt(x*x+y*y));
+    //cout << calhit->getTime() << endl;
 
-    if (y<0) phi = -phi;
+    float r = sqrt(x*x+y*y);
 
-    float xphi = phi + 3.14159/12.;
+    double phi_rel= acos(x/r);
+    if (y<0) phi_rel = -phi_rel+2*3.14159;
+    int n = phi_rel/(2*3.14159/24);
+    phi_rel = phi_rel - n*2*3.14159/24;
+    double x_rel = r*cos(phi_rel);
 
-    if (xphi<0) xphi = 2*3.14159+xphi;
+    int nx;
 
-    int nphi = xphi*6./3.14159;
+    if (x_rel<1550.) nx=0;
+    if (x_rel>1550. && x_rel< 1580.) nx=1;
+    if (x_rel>1580. && x_rel< 1630.) nx=2;
+    if (x_rel>1630. && x_rel< 1670.) nx=3;
+    if (x_rel>1670.) nx=4;
 
-    float delta_phi = 3.14159/2.-2*3.14159/12.*nphi;
+    int nz = abs(z/(2210./3.));
 
-    //float xprime = x*cos(delta_phi)-y*sin(delta_phi);
-    float yprime = x*sin(delta_phi)+y*cos(delta_phi);
+    if (nz>2) nz=2;
 
-    float m_energyc[5] = {14.1607,17.6719,23.0927,24.9074,28.0001};
-    float m_energyf[5] = {20.3787,18.6048,19.045,20.4087,23.8197};
-    float s_energyc[5] = {18.0425,24.4413,36.4643,33.8902,36.6783};
-    float s_energyf[5] = {20.9336,20.1998,22.8853,26.9295,35.3377};
+    //Efficiency for charge collection depending from integration time
+   
+    double eff = 1.0;
 
-    float tenergyc[5];
-    float tenergyf[5];
+    double t_max = 25; //integration time
+    double t_int = t_max-t;
 
-    for (int k=0; k<5; k++){
-      tenergyc[k]=m_energyc[k]+2*s_energyc[k];
-      tenergyf[k]=m_energyf[k]+2*s_energyf[k];
-      }	    
+    if (t_int<15) eff=0.67;
+    if (t_int>=15 && t_int<25) eff=0.73;
+    if (t_int>=25 && t_int<35) eff=0.82;
+    if (t_int>=35 && t_int<45) eff=0.88;
+    if (t_int>=45 && t_int<55) eff=0.91;
+    if (t_int>=55 && t_int<70) eff=0.93;
+    if (t_int>=70 && t_int<90) eff=0.96;
+    if (t_int>=90 && t_int<110) eff=0.99;
+    if (t_int>=110) eff=1.0;
 
-    if (z>-500 && z<500){ //Central region
-    if (yprime<1550) if (calhit->getEnergy()>tenergyc[0]*0.001) pass = true; 
-    if (yprime>1550 && yprime<1600 ) if (calhit->getEnergy()>tenergyc[1]*0.001) pass = true;
-    if (yprime>1600 && yprime<1630) if (calhit->getEnergy()>tenergyc[2]*0.001) pass = true;
-    if (yprime>1630 && yprime<1660) if (calhit->getEnergy()>tenergyc[3]*0.001) pass = true;
-    if (yprime>1660) if (calhit->getEnergy()>tenergyc[4]*0.001) pass = true;
-    }
+    //double eff_BIB = 0.99; //t=100 ns
+    //double eff_BIB = 0.91; //t=50 ns
+    double eff_BIB = 0.78; //t=25 ns
 
-    if (z<-500 || z>500){ //Forward region
-    if (yprime<1550) if (calhit->getEnergy()>tenergyf[0]*0.001) pass = true;
-    if (yprime>1550 && yprime<1600 ) if (calhit->getEnergy()>tenergyf[1]*0.001) pass = true;
-    if (yprime>1600 && yprime<1630) if (calhit->getEnergy()>tenergyf[2]*0.001) pass = true;
-    if (yprime>1630 && yprime<1660) if (calhit->getEnergy()>tenergyf[3]*0.001) pass = true;
-    if (yprime>1660) if (calhit->getEnergy()>tenergyf[4]*0.001) pass = true;
-    }	  
 
+    double eth=GetThresholdCrilin(x,y,z,3);
+
+
+    //if (eff*calhit->getEnergy()>eff_BIB*eth && abs(t)<0.250) cout << "energy = " << eff_BIB*calhit->getEnergy()*1000 << " threshold = " << eth*1000 << " nx = " << nx << " nz = " << nz << " z = " << abs(z) << endl; 
+    
+    if (eff*calhit->getEnergy()>eff_BIB*eth && abs(t)<0.250) pass = true;
+
+    cout << nx << " " << nz << " " << calhit->getEnergy()*1000 << " " << x << " " << y << " " << z << " " << t << endl;   
+
+    double energy = eff*calhit->getEnergy();
+    if (energy>0) calhit->setEnergy(energy);
 
   }
 
@@ -496,14 +521,9 @@ DDCaloDigi_BIB::DDCaloDigi_BIB() : Processor("DDCaloDigi_BIB") {
                              _deadCellEcal_keep,
                              (bool)false);
 
-  registerProcessorParameter("ECAL_use_CLIC" ,
-                             "Use CLIC BIB subtraction " ,
-                             _useCLIC,
-                             (bool)false);
-
   registerProcessorParameter("ECAL_use_Crilin" ,
-                             "Use Crilin BIB subtraction " ,
-                             _useCrilin,
+                             "Use Crilin Barrel BIB subtraction " ,
+                             _useCrilinBarrel,
                              (bool)false);
 
   registerProcessorParameter("ECAL_strip_absorbtionLength",
@@ -793,7 +813,7 @@ void DDCaloDigi_BIB::processRunHeader( LCRunHeader* /*run*/) {
 }
 
 void DDCaloDigi_BIB::processEvent( LCEvent * evt ) {
-
+  
   // create the output collections
   LCCollectionVec *relcol  = new LCCollectionVec(LCIO::LCRELATION);
 
@@ -854,12 +874,25 @@ void DDCaloDigi_BIB::processEvent( LCEvent * evt ) {
       int numElements = col->getNumberOfElements();
       streamlog_out ( DEBUG ) << colName << " number of elements = " << numElements << endl;
 
+      cout << "//////////////////Number of elements = " << numElements << endl; //Lorenzo
+
       for (int j(0); j < numElements; ++j) {
         SimCalorimeterHit * hit = dynamic_cast<SimCalorimeterHit*>( col->getElementAt( j ) ) ;
         float energy = hit->getEnergy();
 
+        float hitx = hit->getPosition()[0];
+        float hity = hit->getPosition()[1];
+        float hitz = hit->getPosition()[2];
+
+        double eth=GetThresholdCrilin(hitx,hity,hitz,3);
+
+	//Correction factors due to integration time effects
+	double eff_min=0.67;
+	double eff_BIB=0.78;
+
         // apply threshold cut
-        if (energy > _thresholdEcal) {
+        //if (eff_min*energy>eff_BIB*eth) {
+	  if (1) {
           int cellid = hit->getCellID0();
           int cellid1 = hit->getCellID1();
           int layer = idDecoder(hit)["layer"];
@@ -1011,7 +1044,7 @@ void DDCaloDigi_BIB::processEvent( LCEvent * evt ) {
                     calhit->setPosition(hit->getPosition());
                     calhit->setType( CHT( CHT::em, CHT::ecal , caloLayout ,  layer ) );
                     calhit->setRawHit(hit);
-                    if (applyDifferentialThresholdEcalBIB(calhit,_useCLIC,_useCrilin)){
+                    if (applyDifferentialThresholdEcalBIB(calhit, _useCrilinBarrel) || (caloLayout!=CHT::barrel)){
                       ecalcol->addElement(calhit);
                       LCRelationImpl *rel = new LCRelationImpl(calhit,hit,1.0);
                       relcol->addElement( rel );
@@ -1044,7 +1077,7 @@ void DDCaloDigi_BIB::processEvent( LCEvent * evt ) {
             calhit->setPosition(hit->getPosition());
             calhit->setType( CHT( CHT::em, CHT::ecal , caloLayout ,  layer ) );
             calhit->setRawHit(hit);
-            if (applyDifferentialThresholdEcalBIB(calhit,_useCLIC,_useCrilin)){
+            if (applyDifferentialThresholdEcalBIB(calhit, _useCrilinBarrel) || (caloLayout!=CHT::barrel)){
               ecalcol->addElement(calhit);
               LCRelationImpl *rel = new LCRelationImpl(calhit,hit,1.0);
               relcol->addElement( rel );
@@ -1194,7 +1227,7 @@ void DDCaloDigi_BIB::processEvent( LCEvent * evt ) {
 		    } else {
 		      float deltat_ij = fabs(timei-timej);
 		      if(deltat_ij<_hcalDeltaTimeHitResolution){ //if this subhit is close to current subhit, add this hit's energy to timecluster
-			if(energyj>energyi)timei=timej; //this is probably not what was intended. i guess this should find the largest hit of one timecluster and use its hittime for the cluster, but instead it compares the current hit energy to the sum of already found hit energies
+			//if(energyj>energyi)timei=timej; //this is probably not what was intended. i guess this should find the largest hit of one timecluster and use its hittime for the cluster, but instead it compares the current hit energy to the sum of already found hit energies
 			//std::cout << timei << " - " << timej << std::endl;
 			//std::cout << energyi << " - " << energyj << std::endl;
 			energyi+=energyj;
@@ -1231,10 +1264,22 @@ void DDCaloDigi_BIB::processEvent( LCEvent * evt ) {
                     CalorimeterHitImpl * calhit = new CalorimeterHitImpl();
                     calhit->setCellID0(cellid);
                     calhit->setCellID1(cellid1);
-                    if(_digitalHcal){
-                      calhit->setEnergy(calibr_coeff);
+		    //std::cout<<"~~~~~~~~~~~~~~~~if(timei > _hcalTimeWindowMin && timei < hcalTimeWindowMax)~~~~~~~~~~~~~~~~"<<std::endl;
+
+		    if(_digitalHcal){
+		      std::cout<<j<<", EnergyBeforeSemiDig, "<<energyi<<std::endl;
+              if (energyi < 1. * std::pow(10,-6)) calhit->setEnergy(10);
+              if (energyi < 3. * std::pow(10,-6) && energyi >= 1. * std::pow(10,-6)) calhit->setEnergy(20);
+              if (energyi >= 3. * std::pow(10,-6)) calhit->setEnergy(30);
+              std::cout<<j<<", EnergyAfterSemiDig, "<<calhit->getEnergy()<<std::endl;
+              //calhit->setEnergy(calibr_coeff);                                                                                                  
+              //cout<<j<<" final digiHcal energy="<<calibr_coeff<<endl;
+                    //if(_digitalHcal){
+		      // calhit->setEnergy(calibr_coeff);
+		      // cout<<" digital hcal energy="<<calibr_coeff<<endl;
                       //eCellOutput+= calibr_coeff;
                     }else{
+		      std::cout<<"~~~~~~~~~~~~~~~~else: not _digitalHcal~~~~~~~~~~~~~~~~"<<std::endl;
                       calhit->setEnergy(calibr_coeff*energyi);
                       //eCellOutput+= energyi*calibr_coeff;
                     }
@@ -1264,7 +1309,13 @@ void DDCaloDigi_BIB::processEvent( LCEvent * evt ) {
 
 
             if(_digitalHcal){
-              calhit->setEnergy(calibr_coeff);
+ 	      std::cout<<"++++++++++Hit Energy before semi-dig+++++++++++++: "<<energyi<<std::endl;
+	      if (energyi < 3.984 * std::pow(10,-6)) calhit->setEnergy(10);
+	      if (energyi < 11.95 * std::pow(10,-6) && energyi >= 3.984 * std::pow(10,-6)) calhit->setEnergy(20);
+	      if (energyi >= 11.95 * std::pow(10,-6)) calhit->setEnergy(30);
+	      std::cout<<"++++++++++Hit Energy after semi-dig+++++++++++++: "<<calhit->getEnergy()<<std::endl;
+              //calhit->setEnergy(calibr_coeff);
+	      //cout<<j<<" final digiHcal energy="<<calibr_coeff<<endl;
             }else{
               calhit->setEnergy(calibr_coeff*energyi);
             }
@@ -1679,7 +1730,17 @@ float DDCaloDigi_BIB::ahcalEnergyDigi(float energy, int id0, int id1) {
   // small update for time-constant uncorrelated miscalibrations. DJ, Jan 2015
 
   float e_out(energy);
-  if ( _applyHcalDigi==1 ) e_out = scintillatorDigi(energy, false);  // scintillator digi
+
+  //if ( _applyHcalDigi==1 ) e_out = scintillatorDigi(energy, false);  // scintillator digi
+  float hcal_elec_smearing = _thresholdHcal[0]*0.1; //10% of the threshold energy 
+  if ( _applyHcalDigi==1 ){
+    float neionpairs=1e9*energy/26; //energy to creat an e-ion pair in Argon is 26 eV; energy is in GeV
+     cout<<" energy="<<e_out<<endl;
+    e_out = energy*CLHEP::RandPoisson::shoot( neionpairs )/neionpairs;
+    cout<<" energy weighted for e-ion pair creation="<<e_out<<endl;
+    e_out += CLHEP::RandGauss::shoot( 0, hcal_elec_smearing );  // apply a gaussian smearing to take into account the electronic noise
+    cout<<" energy after gauss smearing="<<e_out<<endl;
+	}	
 
   // add electronics dynamic range
   // Sept 2015: Daniel moved this to the ScintillatorDigi part, so it is applied before unfolding of sipm response
@@ -2228,6 +2289,3 @@ int DDCaloDigi_BIB::getStripOrientationFromColName( std::string colName ) {
   }
   return orientation;
 }
-
-
-

@@ -34,6 +34,7 @@ public:
         float           m_hadStochasticTerm = 0;                 ///< The stochastic term for Hadronic shower energy resolution
         float           m_emConstantTerm = 0;                    ///< The constant term for EM shower energy resolution
         float           m_hadConstantTerm = 0;                   ///< The constant term for Hadronic shower energy resolution
+        int _digitalCalo = 99;
     };
 
     /**
@@ -100,9 +101,13 @@ private:
      *  @param  pLcioCluster the address of the lcio cluster to be set energies and erros
      *  @param  clusterCorrectEnergy a number to receive the cluster correct energy
      */
-    void SetClusterEnergyAndError(const pandora::ParticleFlowObject *const pPandoraPfo, const pandora::Cluster *const pPandoraCluster, 
-        IMPL::ClusterImpl *const pLcioCluster, float &clusterCorrectEnergy) const;
+      void SetClusterEnergyAndError(const pandora::ParticleFlowObject *const pPandoraPfo, const pandora::Cluster *const pPandoraCluster, 
+				    IMPL::ClusterImpl *const pLcioCluster, float &clusterCorrectEnergy) const;
 
+    void SetDigiCalClusterEnergyAndError(const pandora::ParticleFlowObject *const pPandoraPfo, const pandora::Cluster *const pPandoraCluster,
+				  IMPL::ClusterImpl *const pLcioCluster, float &clusterCorrectEnergy, const pandora::CaloHitList &pandoraCaloHitList) const;
+
+  
     /**
      *  @brief  Set cluster position, errors and other shape info, by calculating culster shape first
      * 

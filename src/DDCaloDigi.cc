@@ -683,7 +683,7 @@ void DDCaloDigi::processRunHeader( LCRunHeader* /*run*/) {
 }
 
 void DDCaloDigi::processEvent( LCEvent * evt ) {
-
+  std::cout<<"***************************************************"<<std::endl;
   // create the output collections
   
   // Relation collection CalorimeterHit, SimCalorimeterHit
@@ -984,7 +984,7 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
   //
   // * Reading HCAL Collections of Simulated Hits *
   //
-
+  cout<<"hcal sim hits collection size="<<_hcalCollections.size()<<endl;
   for (unsigned int i(0); i < _hcalCollections.size(); ++i) {
 
     std::string colName =  _hcalCollections[i] ;
@@ -1006,10 +1006,13 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
       CellIDDecoder<SimCalorimeterHit> idDecoder(col);
       LCCollectionVec *hcalcol = new LCCollectionVec(LCIO::CALORIMETERHIT);
       hcalcol->setFlag(_flag.getFlag());
+      cout<<"number of elements="<<numElements<<endl;
       for (int j(0); j < numElements; ++j) { //loop over all SimCalorimeterHits in this collection
+
         SimCalorimeterHit * hit = dynamic_cast<SimCalorimeterHit*>( col->getElementAt( j ) ) ;
         float energy = hit->getEnergy();
-
+	cout<<"\n"<<endl;
+	cout<<j<<","<<" simHitEnergy, "<<energy<<endl;
         if (energy > _thresholdHcal[0]/2) { //preselect for SimHits with energySum>threshold. Doubtful at least, as lower energy hit might fluctuate up and still be counted
           int cellid = hit->getCellID0();
           int cellid1 = hit->getCellID1();
@@ -1019,8 +1022,10 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
           // with depth - would need a simple mod to make response proportional to layer thickness
           if(_digitalHcal){
             calibr_coeff = this->digitalHcalCalibCoeff(caloLayout,energy);
+	    cout<<j<<", digitalCalibCoeff, "<<calibr_coeff<<endl;
           }else{
             calibr_coeff = this->analogueHcalCalibCoeff(caloLayout,layer);
+	    cout<<j<<" analogue calib coeff="<<calibr_coeff<<endl;
           }
           // if(fabs(hit->getPosition()[2])>=_zOfEcalEndcap)calibr_coeff*=_hcalEndcapCorrectionFactor;
 	  if (caloLayout!=CHT::barrel) calibr_coeff*=_hcalEndcapCorrectionFactor; // more robust, is applied to ALL hits outside of barrel.
@@ -1032,6 +1037,8 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
           float z = hit->getPosition()[2];
           //      float r = sqrt(x*x+y*y);
           if(_useHcalTiming){
+	    //cout<<"/n"<<endl;
+	    //std::cout<<"~~~~~~~~~~~~~if(_useHcalTiming)~~~~~~~~~~~~~~~"<<std::endl;
             float hcalTimeWindowMax;
             if(caloLayout==CHT::barrel){ //current SimHit is in barrel, use barrel timing cut
 		    hcalTimeWindowMax = _hcalBarrelTimeWindowMax;
@@ -1042,7 +1049,7 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
             float r = sqrt(x*x+y*y+z*z);//this is a crude approximation. assumes initial particle originated at the very center of the detector.
             float dt = r/300-0.1;//magic numbers! ~
             const unsigned int n = hit->getNMCContributions(); //number of subhits of this SimHit
-
+	    cout<<j<<", numberOfsubHits, "<<n<<endl;
             std::vector<bool> used(n, false) ;
 
             int count = 0;
@@ -1067,7 +1074,9 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
               //only one calorimeterhit will be generated from this.
               
               if(!used[i_t]){ //if current subhit has not been merged with previous hits already, take current hit as starting point to merge hits
-                // merge with other hits?
+
+		// merge with other hits?
+		//std::cout<<"~~~~~~~~~~~~~~~~~~~~~~if(!used[i_t])~~~~~~~~~~~~~~~~~~"<<std::endl;
                 used[i_t] = true;
                 for(unsigned int j_t =i_t; j_t<n;j_t++){//loop through all hits after current hit
 		  //std::cout << "inner:" << i << " " << j << " " << n << std::endl;
@@ -1086,7 +1095,7 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
 		    } else {
 		      float deltat_ij = fabs(timei-timej);
 		      if(deltat_ij<_hcalDeltaTimeHitResolution){ //if this subhit is close to current subhit, add this hit's energy to timecluster
-			if(energyj>energyi)timei=timej; //this is probably not what was intended. i guess this should find the largest hit of one timecluster and use its hittime for the cluster, but instead it compares the current hit energy to the sum of already found hit energies
+			//if(energyj>energyi)timei=timej; //this is probably not what was intended. i guess this should find the largest hit of one timecluster and use its hittime for the cluster, but instead it compares the current hit energy to the sum of already found hit energies
 			//std::cout << timei << " - " << timej << std::endl;
 			//std::cout << energyi << " - " << energyj << std::endl;
 			energyi+=energyj;
@@ -1116,6 +1125,7 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
 
                 if (energyi > _thresholdHcal[0]){ //now would be the correct time to do threshold comparison
                   float timeCor=0;
+		  //std::cout<<"~~~~~~~~~~~~~~~~if(energyi > _thresholdHcal[0])~~~~~~~~~~~~~~~~"<<std::endl;
                   if(_hcalCorrectTimesForPropagation)timeCor=dt;
                   timei = timei - timeCor;
                   if(timei > _hcalTimeWindowMin && timei < hcalTimeWindowMax){ //if current subhit timecluster is within specified timing window, create new CalorimeterHit and add to collections etc.
@@ -1123,10 +1133,22 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
                     CalorimeterHitImpl * calhit = new CalorimeterHitImpl();
                     calhit->setCellID0(cellid);
                     calhit->setCellID1(cellid1);
-                    if(_digitalHcal){
-                      calhit->setEnergy(calibr_coeff);
+		    //std::cout<<"~~~~~~~~~~~~~~~~if(timei > _hcalTimeWindowMin && timei < hcalTimeWindowMax)~~~~~~~~~~~~~~~~"<<std::endl;
+
+		    if(_digitalHcal){ //3.984 11.95
+		      std::cout<<j<<", EnergyBeforeSemiDig, "<<energyi<<std::endl;
+              if (energyi < 3.9 * std::pow(10,-6)) calhit->setEnergy(10);
+              if (energyi <11.9 * std::pow(10,-6) && energyi >= 3.9 * std::pow(10,-6)) calhit->setEnergy(20);
+              if (energyi >= 11.9 * std::pow(10,-6)) calhit->setEnergy(30);
+              std::cout<<j<<", EnergyAfterSemiDig, "<<calhit->getEnergy()<<std::endl;
+              //calhit->setEnergy(calibr_coeff);                                                                                                  
+              //cout<<j<<" final digiHcal energy="<<calibr_coeff<<endl;
+                    //if(_digitalHcal){
+		      // calhit->setEnergy(calibr_coeff);
+		      // cout<<" digital hcal energy="<<calibr_coeff<<endl;
                       //eCellOutput+= calibr_coeff;
                     }else{
+		      std::cout<<"~~~~~~~~~~~~~~~~else: not _digitalHcal~~~~~~~~~~~~~~~~"<<std::endl;
                       calhit->setEnergy(calibr_coeff*energyi);
                       //eCellOutput+= energyi*calibr_coeff;
                     }
@@ -1158,7 +1180,13 @@ void DDCaloDigi::processEvent( LCEvent * evt ) {
 
 
             if(_digitalHcal){
-              calhit->setEnergy(calibr_coeff);
+	      std::cout<<"++++++++++Hit Energy before semi-dig+++++++++++++: "<<energyi<<std::endl;
+	      if (energyi < 3.984 * std::pow(10,-6)) calhit->setEnergy(10);
+	      if (energyi < 11.95 * std::pow(10,-6) && energyi >= 3.984 * std::pow(10,-6)) calhit->setEnergy(20);
+	      if (energyi >= 11.95 * std::pow(10,-6)) calhit->setEnergy(30);
+	      std::cout<<"++++++++++Hit Energy after semi-dig+++++++++++++: "<<calhit->getEnergy()<<std::endl;
+              //calhit->setEnergy(calibr_coeff);
+	      //cout<<j<<" final digiHcal energy="<<calibr_coeff<<endl;
             }else{
               calhit->setEnergy(calibr_coeff*energyi);
             }
@@ -1574,7 +1602,17 @@ float DDCaloDigi::ahcalEnergyDigi(float energy, int id0, int id1) {
   // small update for time-constant uncorrelated miscalibrations. DJ, Jan 2015
 
   float e_out(energy);
-  if ( _applyHcalDigi==1 ) e_out = scintillatorDigi(energy, false);  // scintillator digi
+
+  //if ( _applyHcalDigi==1 ) e_out = scintillatorDigi(energy, false);  // scintillator digi
+  float hcal_elec_smearing = _thresholdHcal[0]*0.1; //10% of the threshold energy 
+  if ( _applyHcalDigi==1 ){
+    float neionpairs=1e9*energy/26; //energy to creat an e-ion pair in Argon is 26 eV; energy is in GeV
+     cout<<" energy="<<e_out<<endl;
+    e_out = energy*CLHEP::RandPoisson::shoot( neionpairs )/neionpairs;
+    cout<<" energy weighted for e-ion pair creation="<<e_out<<endl;
+    e_out += CLHEP::RandGauss::shoot( 0, hcal_elec_smearing );  // apply a gaussian smearing to take into account the electronic noise
+    cout<<" energy after gauss smearing="<<e_out<<endl;
+	}	
 
   // add electronics dynamic range
   // Sept 2015: Daniel moved this to the ScintillatorDigi part, so it is applied before unfolding of sipm response
